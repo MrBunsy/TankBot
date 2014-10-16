@@ -25,8 +25,9 @@ public class Server {
     public static MotorPinMap[] motorPinMaps = new MotorPinMap[]{new MotorPinMap(4, 17, 18), new MotorPinMap(21, 22, 23)};
 
     private PrintWriter piBlasterWriter;
+    boolean debug;
 
-    public Server(int _port) {
+    public Server(int _port, boolean debug) {
 
         try {
             //open up the pi blaster file for writing
@@ -36,6 +37,7 @@ public class Server {
             System.exit(0);
         }
 
+        this.debug = debug;
         this.port = _port;
         try {
             this.listener = new ServerSocket(port, MAX_CONNECTIONS);
@@ -45,7 +47,7 @@ public class Server {
                 //this blocks until the socket dies
                 try (Socket socket = listener.accept()) {
                     //this blocks until the socket dies
-                    System.out.println("Client connected ("+socket.toString()+")");
+                    System.out.println("Client connected (" + socket.toString() + ")");
                     serviceClient(socket);
                     stopAll();
                 }
@@ -75,8 +77,8 @@ public class Server {
                 } catch (ClassNotFoundException ex) {
                     System.err.println("Data received in unknown format");
                 } catch (IOException ex) {
-                    System.out.println("Client lost ("+socket.toString()+")");
-                    
+                    System.out.println("Client lost (" + socket.toString() + ")");
+
                     return;
                 }
             } while (message != null);
@@ -111,7 +113,9 @@ public class Server {
     private void setPin(int pin, float value) {
         this.piBlasterWriter.println(String.format("%d=%.2f", pin, value));
         this.piBlasterWriter.flush();
-//        System.out.println(String.format("%d=%.2f", pin, value));
+        if (debug) {
+            System.out.println(String.format("%d=%.2f", pin, value));
+        }
     }
 
     /**
@@ -123,17 +127,19 @@ public class Server {
     private void setPin(int pin, boolean high) {
         this.piBlasterWriter.println(String.valueOf(pin) + "=" + (high ? "1" : "0"));
         this.piBlasterWriter.flush();
-//        System.out.println(String.valueOf(pin) + "=" + (high ? "1" : "0"));
+        if (this.debug) {
+            System.out.println(String.valueOf(pin) + "=" + (high ? "1" : "0"));
+        }
     }
 
     /**
      * Stop all motors
      */
-    private void stopAll(){
+    private void stopAll() {
         setMotor(new MotorCommand(0, false, 0));
         setMotor(new MotorCommand(1, false, 0));
     }
-    
+
     private void setMotor(MotorCommand motorCommand) {
         if (motorCommand.motor < motorPinMaps.length && motorCommand.speed >= -1 && motorCommand.speed <= 1) {
             //valid motor and valid speed

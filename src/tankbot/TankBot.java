@@ -17,14 +17,14 @@ import java.util.Properties;
 public class TankBot {
 
     public static void printUsage(){
-        System.out.println("GunControl - For firing remotely controlled Nerf guns\n\n"
+        System.out.println("TankBot - For driving a miniture tank\n\n"
                 + "Usage:\n"
                 + "-s --server: Run a server, not a client\b"
                 + "-c --config: Config file to use"
                 + "When running as a client:\n"
                 + "-p --port: Port to connect to\n"
                 + "-i --ip: IP address to connect to\n"
-                + "-j --joystick: Print debug information for attached controllers\n"
+                + "-d --debug: Print debug information\n"
                 + "Note, command line arguments will override config file");
     }
     
@@ -37,7 +37,7 @@ public class TankBot {
         CmdLineParser.Option serverArg = parser.addBooleanOption('s', "server");
         CmdLineParser.Option portArg = parser.addIntegerOption('p', "port");
         CmdLineParser.Option ipArg = parser.addStringOption('i',"ip");
-        CmdLineParser.Option joystickDebugArg = parser.addBooleanOption('j',"joystick");
+        CmdLineParser.Option debugArg = parser.addBooleanOption('d',"debug");
         CmdLineParser.Option configFileArg = parser.addStringOption('c',"config");
         
         
@@ -69,11 +69,11 @@ public class TankBot {
         boolean actAsServer = (Boolean) parser.getOptionValue(serverArg, defaultServer);
         int port = (Integer) parser.getOptionValue(portArg, defaultPort);
         String ip = (String)parser.getOptionValue(ipArg, defaultIp);
-        boolean debug = (Boolean) parser.getOptionValue(joystickDebugArg,false);
+        boolean debug = (Boolean) parser.getOptionValue(debugArg,false);
         
         if(actAsServer){
             
-            Server server = new Server(port);
+            Server server = new Server(port, debug);
             
         }else{
             Client client = new Client(properties, debug);
