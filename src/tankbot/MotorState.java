@@ -18,6 +18,7 @@ public class MotorState {
     private boolean running;
     //absolute max is set in the config file, throttle can only adjust up to absolutemax
     private final float absoluteMaxSpeed, maxBrake;
+    private float maxSpeed;
     private final double m1ForwardsAdjust, m1BackwardsAdjust, m0ForwardsAdjust, m0BackwardsAdjust;
     private final Controller joystick;
     private Component xAxis, yAxis, zAxis, throttle, handbrake, trigger;
@@ -35,6 +36,9 @@ public class MotorState {
         maxBrake = Float.parseFloat(properties.getProperty("maxBrake", "0.5"));
 
         absoluteMaxSpeed = Float.parseFloat(properties.getProperty("maxSpeed", "1"));
+
+        //assume full throttle to begin
+        this.maxSpeed = absoluteMaxSpeed;
 
         //how much to adjust the motors so they are the same speed as each other
         m1ForwardsAdjust = 1;
@@ -149,11 +153,12 @@ public class MotorState {
             float y = yAxis.getPollData() * (invertY ? -1 : 1);
 //            float z = zAxis.getPollData() * (invertZ ? -1 : 1);
 
-            float t = throttle == null ? 0 : throttle.getPollData();
+            if (throttle != null) {
+                float t = throttle.getPollData();
 
-            //um, not sure why divided by 2
-            float maxSpeed = (1 - t) * (float) absoluteMaxSpeed / 2;
-
+                //um, not sure why divided by 2
+                this.maxSpeed = (1 - t) * (float) absoluteMaxSpeed/2;
+            }
             //setting my own deadzone because I don't think MS's win7 drivers
             //allow this to be done for the sidewinder anymore
             if (Math.abs(x) < deadZone) {
@@ -166,7 +171,6 @@ public class MotorState {
 //            if (Math.abs(z) < deadZone) {
 //                z = 0;
 //            }
-
             Vector joy = new Vector(x, y);
 
             //scale the whole lot up so forwards and backwards are at full speed
@@ -218,10 +222,10 @@ public class MotorState {
                 m1Speed *= m1BackwardsAdjust;
             }
         }
-        
+
         //set latest commands
-        this.m0Command = new MotorCommand(0, m0Brake, (float)m0Speed);
-        this.m1Command = new MotorCommand(1, m1Brake, (float)m1Speed);
+        this.m0Command = new MotorCommand(0, m0Brake, (float) m0Speed);
+        this.m1Command = new MotorCommand(1, m1Brake, (float) m1Speed);
     }
 
     public void keyDown(KeyEvent evt) {
@@ -284,11 +288,12 @@ public class MotorState {
 
     /**
      * Get the latest valid motor command
+     *
      * @param motor
-     * @return 
+     * @return
      */
-    public MotorCommand getMotorCommand(int motor){
-        switch(motor){
+    public MotorCommand getMotorCommand(int motor) {
+        switch (motor) {
             case 0:
                 return this.m0Command;
             case 1:
@@ -297,7 +302,28 @@ public class MotorState {
                 return null;
         }
     }
-    
+
+    /**
+     * Get the maximum speed as limited by the current throttle
+     *
+     * @return
+     */
+    public float getMaxSpeed() {
+        return this.maxSpeed;
+    }
+
+    /**
+     * Returns true if the throttle is controlled by the joystick
+     *
+     * @return
+     */
+    public boolean hasThrottle() {
+        return this.throttle != null;
+    }
+
+    public void setMaxSpeed(float maxSpeed) {
+        this.maxSpeed = maxSpeed;
+    }
 //    public void setMotors(int _m0Speed, boolean _m0Forwards, boolean _m0Break, int _m1Speed, boolean _m1Forwards, boolean _m1Break) {
 //        MotorSpeedCommand motorSpeed = new MotorSpeedCommand(_m0Speed, _m0Forwards, _m0Break, _m1Speed, _m1Forwards, _m1Break);
 //        sendObject(motorSpeed);

@@ -1,1 +1,1 @@
-java -jar dist/TankBot.jar -i 192.168.1.45
+java -Djava.library.path=D:\Documents\Java\TankBot\lib -jar dist/TankBot.jar -i 192.168.1.45

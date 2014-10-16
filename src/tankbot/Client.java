@@ -28,7 +28,7 @@ public class Client {
     private final Timer motorStateTimer;
     //how often to poll for new motor state to send to pi
     private final static long MOTOR_STATE_UPDATE_PERIOD_MS = 100;
-    private MotorState motorState;
+    private final MotorState motorState;
     
     //semi abstracted so more motors could be added later (eg for turret)
     private final static int NUM_MOTORS = 2;

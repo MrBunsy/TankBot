@@ -5,6 +5,8 @@ package tankbot;
 
 import java.awt.*;
 import java.awt.event.KeyEvent;
+import java.util.Timer;
+import java.util.TimerTask;
 import javax.swing.JOptionPane;
 
 /**
@@ -13,13 +15,16 @@ import javax.swing.JOptionPane;
  */
 public class ControlWindow extends javax.swing.JFrame {
 
-//    public final static int MIN_SLIDER_VALUE = -1000;
     public final static int MAX_SLIDER_VALUE = 1000;
-    
+
     private final Client client;
     private final MotorState motorState;
     private String defaultIp;
     private int defaultport;
+    //for updating from motorstate
+    private final Timer motorStateTimer;
+    //how often to poll for new motor state
+    private final static long MOTOR_STATE_UPDATE_PERIOD_MS = 50;
 
     private class MyDispatcher implements KeyEventDispatcher {
 
@@ -48,28 +53,55 @@ public class ControlWindow extends javax.swing.JFrame {
         KeyboardFocusManager manager = KeyboardFocusManager.getCurrentKeyboardFocusManager();
         manager.addKeyEventDispatcher(new MyDispatcher());
 
+        this.motorStateTimer = new Timer("MotorStateTimer");
+        this.motorStateTimer.scheduleAtFixedRate(new TimerTask() {
+
+            @Override
+            public void run() {
+                updateUIFromMotorState();
+            }
+        }, (long) MOTOR_STATE_UPDATE_PERIOD_MS, MOTOR_STATE_UPDATE_PERIOD_MS);
+
         initComponents();
+    }
+
+    private void updateUIFromMotorState() {
+
+        if (!this.motorState.hasThrottle()) {
+            //the UI, not the joystick, control the throttle
+            this.motorState.setMaxSpeed(((float) this.throttleSlider.getValue()) / ((float) MAX_SLIDER_VALUE));
+        }
+
+        updateMotorState(this.motorState.getMotorCommand(0).speed, this.motorState.getMotorCommand(1).speed, this.motorState.getMotorCommand(0).brake, this.motorState.getMaxSpeed());
+
     }
 
     /**
      * Speeds from -1 to 1
+     *
      * @param m0Speed
      * @param m1Speed
      * @param handbreak
      * @param throttle maximum speed allowed in any direction
      */
-    public void updateMotorState(float m0Speed, float m1Speed, boolean handbreak, float throttle) {
-        motor0Slider.setMaximum(Math.round(throttle*MAX_SLIDER_VALUE));
-        motor0Slider.setMinimum(-Math.round(throttle*MAX_SLIDER_VALUE));
+    private void updateMotorState(float m0Speed, float m1Speed, boolean handbreak) {
 
-        motor0Slider.setValue(Math.round(m0Speed*MAX_SLIDER_VALUE));
+        motor0Slider.setValue(Math.round(m0Speed * MAX_SLIDER_VALUE));
 
-        motor1Slider.setMaximum(Math.round(throttle*MAX_SLIDER_VALUE));
-        motor1Slider.setMinimum(-Math.round(throttle*MAX_SLIDER_VALUE));
+        motor1Slider.setValue(Math.round(m1Speed * MAX_SLIDER_VALUE));
 
-        motor1Slider.setValue(Math.round(m1Speed*MAX_SLIDER_VALUE));
-        
-        throttleSlider.setValue(Math.round(throttle*MAX_SLIDER_VALUE));
+    }
+
+    private void updateMotorState(float m0Speed, float m1Speed, boolean handbreak, float throttle) {
+        throttleSlider.setValue(Math.round(throttle * MAX_SLIDER_VALUE));
+
+        motor1Slider.setMaximum(Math.round(throttle * MAX_SLIDER_VALUE));
+        motor1Slider.setMinimum(-Math.round(throttle * MAX_SLIDER_VALUE));
+
+        motor0Slider.setMaximum(Math.round(throttle * MAX_SLIDER_VALUE));
+        motor0Slider.setMinimum(-Math.round(throttle * MAX_SLIDER_VALUE));
+
+        updateMotorState(m0Speed, m1Speed, handbreak);
     }
 
     /**
@@ -117,7 +149,7 @@ public class ControlWindow extends javax.swing.JFrame {
         motor0Slider.setValue(0);
 
         throttleSlider.setMaximum(MAX_SLIDER_VALUE);
-        throttleSlider.setMinimum(-MAX_SLIDER_VALUE);
+        throttleSlider.setValue(MAX_SLIDER_VALUE);
 
         handbreakButton.setText("Handbreak");
 
@@ -179,7 +211,7 @@ public class ControlWindow extends javax.swing.JFrame {
         //bring up dialogue for IP and port of server
         String ip = JOptionPane.showInputDialog(rootPane, "IP of server", this.defaultIp);
         if (ip != null) {
-            client.connectTo(ip,this.defaultport);
+            client.connectTo(ip, this.defaultport);
         }
     }//GEN-LAST:event_serverIPActionPerformed
 
