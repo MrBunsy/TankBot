@@ -1,0 +1,1 @@
+java -jar dist/TankBot.jar -i 192.168.1.45
