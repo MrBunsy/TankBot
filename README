@@ -1,0 +1,8 @@
+Tidied up version of the Java software to drive my nerfbot.
+
+Set up:
+
+PC + xbox controller on network.
+Raspberry pi + wifi adapter on same network.
+
+pi-blaster must be installed and running on the Pi (for software PWM).
