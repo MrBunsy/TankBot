@@ -182,16 +182,6 @@ public class MotorState {
 //            }
             Vector joy = new Vector(x, y);
 
-            //scale the whole lot up so forwards and backwards are at full speed
-//            joy = joy.multiply(Math.sqrt(2));
-            double joySize = joy.getMagnitude();
-            if (joySize > 1) {
-                //the corners can mean we end up with a magnitude greater than one
-                //this way, going into the corner is the same as moving in that
-                //direction but being the same distance from the centre as the top/bottom/left/right
-//                joy = joy.multiply(1 / joySize);
-            }
-
             /*
              this is the fiddly bit - each motor maps to an imaginary axis at 45deg to x,y.
              this way forwards and backwards both motors get the same signal,
@@ -205,17 +195,18 @@ public class MotorState {
             //scale the whole lot up so forwards and backwards are at full speed
             motorSpeeds = motorSpeeds.multiply(Math.sqrt(2));
 
-            double motorSpeedsSize = motorSpeeds.getMagnitude();
-            if (motorSpeedsSize > 1) {
-                //the corners can mean we end up with a magnitude greater than one
-                //this way, going into the corner is the same as moving in that
-                //direction but being the same distance from the centre as the top/bottom/left/right
-//                motorSpeeds = motorSpeeds.multiply(1 / motorSpeedsSize);
-            }
+//            double motorSpeedsSize = motorSpeeds.getMagnitude();
+//            if (motorSpeedsSize > 1) {
+//                //the corners can mean we end up with a magnitude greater than one
+//                //this way, going into the corner is the same as moving in that
+//                //direction but being the same distance from the centre as the top/bottom/left/right
+////                motorSpeeds = motorSpeeds.multiply(1 / motorSpeedsSize);
+//            }
 
             m0Speed = motorSpeeds.x;
             m1Speed = motorSpeeds.y;
 
+            //cap speeds to (-1,1] to keep pi-blaster happy
             if (m0Speed > 1) {
                 m0Speed = 1;
             }
@@ -238,9 +229,6 @@ public class MotorState {
             m1Brake = true;
         }
 
-//            if (trigger != null && trigger.getPollData() != 0f) {
-//                client.fire();
-//            }
         if (!m0Brake) {
             if (m0Speed > 0) {
                 m0Speed *= m0ForwardsAdjust;
@@ -355,22 +343,9 @@ public class MotorState {
         return this.throttle != null;
     }
 
+    
+    
     public void setMaxSpeed(float maxSpeed) {
         this.maxSpeed = maxSpeed;
     }
-//    public void setMotors(int _m0Speed, boolean _m0Forwards, boolean _m0Break, int _m1Speed, boolean _m1Forwards, boolean _m1Break) {
-//        MotorSpeedCommand motorSpeed = new MotorSpeedCommand(_m0Speed, _m0Forwards, _m0Break, _m1Speed, _m1Forwards, _m1Break);
-//        sendObject(motorSpeed);
-//    }
-//
-//    //simplified version, with +/- allowed for speed
-//    public void setMotors(int _m0Speed, boolean _m0Break, int _m1Speed, boolean _m1Break) {
-//        sendObject(new MotorSpeedCommand(_m0Speed, _m0Break, _m1Speed, _m1Break));
-//
-//        //also adjust the UI
-//    }
-//
-//    public void updateUI(int m0Speed, int m1Speed, boolean handbreak, int throttle) {
-//        window.updateMotorState(m0Speed, m1Speed, handbreak, throttle);
-//    }
 }

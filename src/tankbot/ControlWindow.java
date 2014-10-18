@@ -72,6 +72,7 @@ public class ControlWindow extends javax.swing.JFrame {
             this.motorState.setMaxSpeed(((float) this.throttleSlider.getValue()) / ((float) MAX_SLIDER_VALUE));
         }
 
+        //assuming that if motor 0 is braked, the handbrake is on
         updateMotorState(this.motorState.getMotorCommand(0).speed, this.motorState.getMotorCommand(1).speed, this.motorState.getMotorCommand(0).brake, this.motorState.getMaxSpeed());
 
     }
@@ -84,15 +85,18 @@ public class ControlWindow extends javax.swing.JFrame {
      * @param handbreak
      * @param throttle maximum speed allowed in any direction
      */
-    private void updateMotorState(float m0Speed, float m1Speed, boolean handbreak) {
+    private void updateMotorState(float m0Speed, float m1Speed, boolean handbrake) {
 
         motor0Slider.setValue(Math.round(m0Speed * MAX_SLIDER_VALUE));
 
         motor1Slider.setValue(Math.round(m1Speed * MAX_SLIDER_VALUE));
 
+        if(handbrake){
+            
+        }
     }
 
-    private void updateMotorState(float m0Speed, float m1Speed, boolean handbreak, float throttle) {
+    private void updateMotorState(float m0Speed, float m1Speed, boolean handbrake, float throttle) {
         throttleSlider.setValue(Math.round(throttle * MAX_SLIDER_VALUE));
 
         motor1Slider.setMaximum(Math.round(throttle * MAX_SLIDER_VALUE));
@@ -101,7 +105,7 @@ public class ControlWindow extends javax.swing.JFrame {
         motor0Slider.setMaximum(Math.round(throttle * MAX_SLIDER_VALUE));
         motor0Slider.setMinimum(-Math.round(throttle * MAX_SLIDER_VALUE));
 
-        updateMotorState(m0Speed, m1Speed, handbreak);
+        updateMotorState(m0Speed, m1Speed, handbrake);
     }
 
     /**
