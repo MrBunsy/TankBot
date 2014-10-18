@@ -10,12 +10,14 @@ import net.java.games.input.Controller;
  *
  * @author Luke
  *
- * Keeps track of what state the motors should be in, and can generate messages
- * on demand
+ * Keeps track of desired state of all motors. getMotorCommand() provides a
+ * struct-like object which specifies the desired state of a specific motor
+ *
+ * Call update() regularly to ensure that the state of the motors reflects the
+ * state of the joystick.
  */
 public class MotorState {
 
-    private boolean running;
     //absolute max is set in the config file, throttle can only adjust up to absolutemax
     private final float absoluteMaxSpeed, maxBrake;
     private float maxSpeed;
@@ -157,7 +159,7 @@ public class MotorState {
                 float t = throttle.getPollData();
 
                 //um, not sure why divided by 2
-                this.maxSpeed = (1 - t) * (float) absoluteMaxSpeed/2;
+                this.maxSpeed = (1 - t) * (float) absoluteMaxSpeed / 2;
             }
             //setting my own deadzone because I don't think MS's win7 drivers
             //allow this to be done for the sidewinder anymore
@@ -174,14 +176,13 @@ public class MotorState {
             Vector joy = new Vector(x, y);
 
             //scale the whole lot up so forwards and backwards are at full speed
-            joy = joy.multiply(Math.sqrt(2));
-
+//            joy = joy.multiply(Math.sqrt(2));
             double joySize = joy.getMagnitude();
             if (joySize > 1) {
                 //the corners can mean we end up with a magnitude greater than one
                 //this way, going into the corner is the same as moving in that
                 //direction but being the same distance from the centre as the top/bottom/left/right
-                joy = joy.multiply(1 / joySize);
+//                joy = joy.multiply(1 / joySize);
             }
 
             /*

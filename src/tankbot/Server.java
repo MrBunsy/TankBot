@@ -11,6 +11,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
+ * Listens for connections over a TCP socket, and then uses pi-blaster to set
+ * motors to the requested states
  *
  * @author Luke
  */
@@ -21,11 +23,20 @@ public class Server {
     private final int port;
     private static final int MAX_CONNECTIONS = 1;
 
+    //if true, debug mode spits out commands to pi blaster
+    private static final boolean DEBUG_PI_BLASTER = false;
+
     //this maps which GPIO pins on the Pi control which inputs on the H-bridges for each motor
-    public static MotorPinMap[] motorPinMaps = new MotorPinMap[]{new MotorPinMap(4, 17, 18), new MotorPinMap(21, 22, 23)};
+    public static final MotorPinMap[] motorPinMaps = new MotorPinMap[]{new MotorPinMap(4, 17, 18), new MotorPinMap(21, 22, 23)};
+
+    public static final int NUM_MOTORS = motorPinMaps.length;
 
     private PrintWriter piBlasterWriter;
-    boolean debug;
+    private boolean debug;
+
+    //for storing last motor commands for debug output
+    private MotorCommand[] debugMotors = new MotorCommand[]{new MotorCommand(0, false, 0), new MotorCommand(1, false, 0)};
+    private static final int DEBUG_BARS = 20;
 
     public Server(int _port, boolean debug) {
 
@@ -64,7 +75,7 @@ public class Server {
      * @param socket
      */
     private void serviceClient(Socket socket) {
-        ObjectInputStream in = null;
+        ObjectInputStream in;
         try {
             System.out.println(socket.getInetAddress().toString() + " connected");
             in = new ObjectInputStream(socket.getInputStream());
@@ -113,7 +124,7 @@ public class Server {
     private void setPin(int pin, float value) {
         this.piBlasterWriter.println(String.format("%d=%.2f", pin, value));
         this.piBlasterWriter.flush();
-        if (debug) {
+        if (DEBUG_PI_BLASTER && debug) {
             System.out.println(String.format("%d=%.2f", pin, value));
         }
     }
@@ -127,7 +138,7 @@ public class Server {
     private void setPin(int pin, boolean high) {
         this.piBlasterWriter.println(String.valueOf(pin) + "=" + (high ? "1" : "0"));
         this.piBlasterWriter.flush();
-        if (this.debug) {
+        if (DEBUG_PI_BLASTER && this.debug) {
             System.out.println(String.valueOf(pin) + "=" + (high ? "1" : "0"));
         }
     }
@@ -141,7 +152,7 @@ public class Server {
     }
 
     private void setMotor(MotorCommand motorCommand) {
-        if (motorCommand.motor < motorPinMaps.length && motorCommand.speed >= -1 && motorCommand.speed <= 1) {
+        if (motorCommand.motor < NUM_MOTORS && motorCommand.speed >= -1 && motorCommand.speed <= 1) {
             //valid motor and valid speed
 
             if (motorCommand.brake) {
@@ -165,6 +176,30 @@ public class Server {
             }
 
             setPin(motorPinMaps[motorCommand.motor].getEnableGPIO(), Math.abs(motorCommand.speed));
+        }
+
+        if (this.debug && !DEBUG_PI_BLASTER) {
+            this.debugMotors[motorCommand.motor] = motorCommand;
+
+            String barString = "\r";
+            for (MotorCommand m : this.debugMotors) {
+
+                barString += "[";
+
+                //convert speed into a number between 0 and DEBUG_BARS 
+                int bars = Math.round(m.speed * DEBUG_BARS / 2 + DEBUG_BARS / 2);
+
+                for (int i = 0; i < DEBUG_BARS; i++) {
+                    if (i <= bars) {
+                        barString += "=";
+                    } else {
+                        barString += " ";
+                    }
+                }
+
+                barString += "] ";
+            }
+            System.out.print(barString);
         }
     }
 }

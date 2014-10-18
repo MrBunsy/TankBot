@@ -29,9 +29,11 @@ public class Client {
     //how often to poll for new motor state to send to pi
     private final static long MOTOR_STATE_UPDATE_PERIOD_MS = 100;
     private final MotorState motorState;
-    
+
     //semi abstracted so more motors could be added later (eg for turret)
     private final static int NUM_MOTORS = 2;
+
+    private boolean connected = false;
 
     Client(Properties properties, boolean debug) {
 
@@ -112,6 +114,7 @@ public class Client {
 
                 out = new ObjectOutputStream(socket.getOutputStream());
                 System.out.println("Connected to " + serverIp + ":" + _port);
+                this.connected = true;
 
             } catch (IOException e) {
                 System.err.println("Couldn't get I/O for the connection: " + e.getMessage());
@@ -146,14 +149,17 @@ public class Client {
                 out.writeObject(o);
             }
         } catch (IOException ex) {
-            Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
+            System.out.println("Lost connection to "+this.socket.toString());
+            this.connected = false;
         }
     }
 
     public void sendLatestMotorState() {
         this.motorState.update();
-        for (int i = 0; i < NUM_MOTORS; i++) {
-            sendObject(this.motorState.getMotorCommand(i));
+        if (this.connected) {
+            for (int i = 0; i < NUM_MOTORS; i++) {
+                sendObject(this.motorState.getMotorCommand(i));
+            }
         }
     }
 
