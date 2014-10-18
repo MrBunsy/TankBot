@@ -13,6 +13,8 @@ import net.java.games.input.Controller;
  * Keeps track of desired state of all motors. getMotorCommand() provides a
  * struct-like object which specifies the desired state of a specific motor
  *
+ * Uses jinput for joystick stuff
+ *
  * Call update() regularly to ensure that the state of the motors reflects the
  * state of the joystick.
  */
@@ -54,6 +56,7 @@ public class MotorState {
         //TODO if this is ever distributed beyond me
         //have a fully configurable joystick options
 
+        //defaults are all set up for windows 7 and an xbox controller
         if (joystick != null) {
             Component[] components = joystick.getComponents();
 
@@ -102,17 +105,19 @@ public class MotorState {
 
     private boolean forwards, backwards, left, right, anticlockwise, clockwise, stop;
 
+    /**
+     * Grab latest data from joystick and update internal state
+     */
     public void update() {
 
         double m0Speed = 0;
-        //boolean m0Forwards=true;
-        boolean m0Brake = false;//default to not break and 0 speed so they should coast
+        //default to not break and 0 speed so they should coast
+        boolean m0Brake = false;
 
         //if break is true then the speed is the break strength
         boolean keypressed = false;
         double m1Speed = 0;
-        //boolean m1Forwards=true;
-        boolean m1Brake = true;
+        boolean m1Brake = false;
         //really crude for now
         if (stop) {
             m0Speed = maxBrake;
@@ -145,6 +150,8 @@ public class MotorState {
             m1Brake = false;
             keypressed = true;
         }
+
+        //if using a joystick and not the keyboard
         if (joystick != null && !keypressed) {
 
             m1Brake = false;
@@ -193,10 +200,36 @@ public class MotorState {
             Vector m0Axis = (new Vector(1, 1)).getUnit();
             Vector m1Axis = (new Vector(-1, 1)).getUnit();
 
-            m0Speed = m0Axis.dot(joy) * maxSpeed;
-            m1Speed = m1Axis.dot(joy) * maxSpeed;
-        }
+            Vector motorSpeeds = new Vector(m0Axis.dot(joy) * maxSpeed, m1Axis.dot(joy) * maxSpeed);
 
+            //scale the whole lot up so forwards and backwards are at full speed
+            motorSpeeds = motorSpeeds.multiply(Math.sqrt(2));
+
+            double motorSpeedsSize = motorSpeeds.getMagnitude();
+            if (motorSpeedsSize > 1) {
+                //the corners can mean we end up with a magnitude greater than one
+                //this way, going into the corner is the same as moving in that
+                //direction but being the same distance from the centre as the top/bottom/left/right
+//                motorSpeeds = motorSpeeds.multiply(1 / motorSpeedsSize);
+            }
+
+            m0Speed = motorSpeeds.x;
+            m1Speed = motorSpeeds.y;
+
+            if (m0Speed > 1) {
+                m0Speed = 1;
+            }
+            if (m0Speed < -1) {
+                m0Speed = -1;
+            }
+
+            if (m1Speed > 1) {
+                m1Speed = 1;
+            }
+            if (m1Speed < -1) {
+                m1Speed = -1;
+            }
+        }
         if (handbrake != null && handbrake.getPollData() != 0f) {
             //handbreak pressed
             m0Speed = maxBrake;
