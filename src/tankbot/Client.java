@@ -3,6 +3,7 @@ package tankbot;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.Properties;
@@ -95,11 +96,15 @@ public class Client {
 
     /**
      * Connect (or reconnect) to an IP and port
+     * Synchronized so if we try to connect to somewhere that doesn't exist, we
+     * don't try and connect somewhere else in parallel
+     * 
+     * TODO refactor so if a new connection attempt is made the old one can be aborted, rather than waiting for it to time out
      *
      * @param serverIp
      * @param _port
      */
-    public void connectTo(String serverIp, int _port) {
+    public synchronized void connectTo(String serverIp, int _port) {
         System.out.println("Attempting to connect to " + serverIp + ":" + _port);
         if (socket != null) {
             try {
@@ -135,6 +140,10 @@ public class Client {
         if (address != null) {
             try {
                 _socket = new Socket(address, port);
+//                _socket = new Socket();
+//                _socket.setSoTimeout(100);
+//                _socket.connect(new InetSocketAddress(address, port));
+//                _socket.setSoTimeout(0);
             } catch (IOException e) {
                 System.out.println("Failed to connect to " + host + ":" + port + " " + e.getMessage());
             }
@@ -145,11 +154,17 @@ public class Client {
 
     private void sendObject(Object o) {
         try {
+            if (socket == null) {
+                System.out.println("help");
+            }
+            if (o == null) {
+                System.out.println("help2");
+            }
             if (out != null && !socket.isOutputShutdown()) {
                 out.writeObject(o);
             }
         } catch (IOException ex) {
-            System.out.println("Lost connection to "+this.socket.toString());
+            System.out.println("Lost connection to " + this.socket.toString());
             this.connected = false;
         }
     }
